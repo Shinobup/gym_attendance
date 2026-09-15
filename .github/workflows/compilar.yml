@@ -1,0 +1,40 @@
+name: Compilar APK Kratos
+
+#Encender la fabrica cada vez que subes cambios a github
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Traer tu codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Preparar Java (Necesario para Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Instalar Flet en el servidor
+        run: pip install flet
+
+      - name: Inyectar llave secreta al celular
+        run: echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS }}" > .env
+
+      - name: Construir la APK
+        run: flet build apk
+
+      - name: Subir la APK lista para descargar
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gym-Kratos-APK
+          path: build/apk/**/*.apk
