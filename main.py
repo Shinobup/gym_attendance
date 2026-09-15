@@ -3,11 +3,11 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 
-# 1. Calculamos la ruta exacta donde está tu app instalada en el celular
+# Calculamos la ruta exacta
 directorio_actual = os.path.dirname(os.path.abspath(__file__))
 ruta_env = os.path.join(directorio_actual, '.env')
 
-# 2. Le damos el archivo en la mano para que no busque a ciegas
+# Cargamos el archivo directamente SIN usar find_dotenv()
 load_dotenv(ruta_env) 
 
 import json 

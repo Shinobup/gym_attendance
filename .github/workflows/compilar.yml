@@ -28,7 +28,9 @@ jobs:
         run: pip install flet
 
       - name: Inyectar llave secreta al celular
-        run: echo "GOOGLE_CREDENTIALS=${{ secrets.GOOGLE_CREDENTIALS }}" > .env
+        env:
+          MIS_CREDENCIALES: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: echo "GOOGLE_CREDENTIALS=$(echo $MIS_CREDENCIALES | jq -c .)" > .env
 
       - name: Construir la APK
         run: yes | flet build apk
