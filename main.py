@@ -5,26 +5,36 @@ import json
 import sys
 import types
 
-# --- PARCHE PARA ANDROID ---
-class MockClass:
-    # Una clase de verdad que absorbe cualquier cosa que Google intente hacer con ella
-    def __init__(self, *args, **kwargs): pass
-    def __call__(self, *args, **kwargs): return MockClass()
-    def __getattr__(self, key): return MockClass()
+# --- PARCHE PARA ANDROID (VERSIÓN ESTRUCTURAL FINAL) ---
+class DummyServerClass:
+    # Una clase vacía perfecta para que Google herede de ella sin errores
+    pass
 
 class DummyModule(types.ModuleType):
-    def __getattr__(self, key):
-        if key == '__path__':
-            return []
-        # Entregamos una clase real para que la herencia (MRO) no explote
-        return MockClass
+    def __init__(self, name):
+        super().__init__(name)
+        self.__path__ = []
 
-# Bloqueamos solo los servidores locales
-sys.modules['wsgiref'] = DummyModule('wsgiref')
-sys.modules['wsgiref.simple_server'] = DummyModule('wsgiref.simple_server')
-sys.modules['wsgiref.util'] = DummyModule('wsgiref.util')
-sys.modules['http.server'] = DummyModule('http.server')
-# ----------------------------------------
+    def __getattr__(self, name):
+        # Cuando Google pida una herramienta (como WSGIServer), le damos nuestra clase
+        return DummyServerClass
+
+# 1. Creamos los módulos falsos como si fueran carpetas reales
+wsgiref_mod = DummyModule('wsgiref')
+simple_server_mod = DummyModule('wsgiref.simple_server')
+util_mod = DummyModule('wsgiref.util')
+http_server_mod = DummyModule('http.server')
+
+# 2. Conectamos las carpetas para que la ruta wsgiref.simple_server exista de verdad
+wsgiref_mod.simple_server = simple_server_mod
+wsgiref_mod.util = util_mod
+
+# 3. Registramos todo en el sistema matriz de Python
+sys.modules['wsgiref'] = wsgiref_mod
+sys.modules['wsgiref.simple_server'] = simple_server_mod
+sys.modules['wsgiref.util'] = util_mod
+sys.modules['http.server'] = http_server_mod
+# -------------------------------------------------------
 
 import gspread # Ahora gspread cargará sin estrellarse
 import gspread
