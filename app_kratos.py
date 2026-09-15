@@ -10,9 +10,9 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 try:
-    credenciales_texto = os.environ.get('CREDENCIALES_GOOGLE')
+    credenciales_texto = os.environ.get('GOOGLE_CREDENTIALS')
     if not credenciales_texto:
-        raise ValueError("No se encontró la variable de entorno CREDENCIALES_GOOGLE")
+        raise ValueError("No se encontró la variable de entorno GOOGLE_CREDENTIALS")
     credenciales_dict = json.loads(credenciales_texto)
     gc = gspread.service_account_from_dict(credenciales_dict)
     libro = gc.open('Clientes Kratos') 
@@ -66,7 +66,6 @@ def main(page: ft.Page):
                 ft.dropdown.Option("No personalizado"),
             ],
         )
-        # -------------------------------
         
         texto_mensaje = ft.Text(value="", size=16)
 
@@ -180,7 +179,6 @@ def main(page: ft.Page):
         titulo = ft.Text("🔄 RENOVAR MEMBRESÍA", size=24, weight=ft.FontWeight.BOLD)
         texto_mensaje = ft.Text(value="", size=16)
         
-        # --- DROPDOWN CON ESTILO BLANCO Y LETRA NEGRA ---
         dropdown_clientes = ft.Dropdown(
             label="Selecciona un cliente", 
             filled=True,
@@ -218,7 +216,6 @@ def main(page: ft.Page):
             dropdown_clientes.value = None
             page.update()
 
-        # --- BOTÓN CON ESTILO ROJO KRATOS ---
         estilo_btn_renovar = ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=4), 
             bgcolor=ft.Colors.RED_900,
@@ -323,7 +320,7 @@ def main(page: ft.Page):
                 
                 fecha_vencimiento = datetime.strptime(vence, "%Y-%m-%d")
                 
-                # ¡Solo mostramos a los que ya vencieron!
+                # Solo mostramos a los que ya vencieron
                 if datetime.now() > fecha_vencimiento:
                     hay_morosos = True
                     
