@@ -5,19 +5,25 @@ import json
 import sys
 import types
 
-# --- PARCHE PARA ANDROID ---
+# --- PARCHE PARA ANDROID (VERSIÓN 2.0) ---
 class DummyModule(types.ModuleType):
     def __getattr__(self, key):
+        if key == '__path__':
+            return []  # Esto soluciona el error de "not iterable"
         return DummyModule(key)
+        
     def __call__(self, *args, **kwargs):
         return None
+        
+    def __iter__(self):
+        return iter([])
 
 sys.modules['wsgiref'] = DummyModule('wsgiref')
 sys.modules['wsgiref.simple_server'] = DummyModule('wsgiref.simple_server')
 sys.modules['wsgiref.util'] = DummyModule('wsgiref.util')
 sys.modules['http'] = DummyModule('http')
 sys.modules['http.server'] = DummyModule('http.server')
-# ---------------------------
+# -----------------------------------------
 
 import gspread # Ahora gspread cargará sin estrellarse
 import gspread
