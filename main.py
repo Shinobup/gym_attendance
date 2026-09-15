@@ -2,6 +2,24 @@ import flet as ft
 from datetime import datetime, timedelta
 import os
 import json 
+import sys
+import types
+
+# --- PARCHE PARA ANDROID ---
+class DummyModule(types.ModuleType):
+    def __getattr__(self, key):
+        return DummyModule(key)
+    def __call__(self, *args, **kwargs):
+        return None
+
+sys.modules['wsgiref'] = DummyModule('wsgiref')
+sys.modules['wsgiref.simple_server'] = DummyModule('wsgiref.simple_server')
+sys.modules['wsgiref.util'] = DummyModule('wsgiref.util')
+sys.modules['http'] = DummyModule('http')
+sys.modules['http.server'] = DummyModule('http.server')
+# ---------------------------
+
+import gspread # Ahora gspread cargará sin estrellarse
 import gspread
 import urllib.parse
 from dotenv import load_dotenv
