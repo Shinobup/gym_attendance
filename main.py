@@ -5,11 +5,11 @@ import json
 import sys
 import types
 
-# --- PARCHE PARA ANDROID (VERSIÓN 2.0) ---
+# --- PARCHE PARA ANDROID (VERSIÓN 3.0 DEFINITIVA) ---
 class DummyModule(types.ModuleType):
     def __getattr__(self, key):
         if key == '__path__':
-            return []  # Esto soluciona el error de "not iterable"
+            return []  
         return DummyModule(key)
         
     def __call__(self, *args, **kwargs):
@@ -18,12 +18,12 @@ class DummyModule(types.ModuleType):
     def __iter__(self):
         return iter([])
 
+# SOLO silenciamos wsgiref. 
+# Borramos el bloqueo de 'http' para que la app sí pueda conectarse a internet.
 sys.modules['wsgiref'] = DummyModule('wsgiref')
 sys.modules['wsgiref.simple_server'] = DummyModule('wsgiref.simple_server')
 sys.modules['wsgiref.util'] = DummyModule('wsgiref.util')
-sys.modules['http'] = DummyModule('http')
-sys.modules['http.server'] = DummyModule('http.server')
-# -----------------------------------------
+# ----------------------------------------------------
 
 import gspread # Ahora gspread cargará sin estrellarse
 import gspread
