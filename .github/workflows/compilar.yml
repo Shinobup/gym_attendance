@@ -26,22 +26,11 @@ jobs:
       - name: Instalar Flet en el servidor
         run: pip install flet
 
-      - name: Construir infraestructura de soporte
-    env:
-      LLAVE_SECRETA: ${{ secrets.GOOGLE_CREDENTIALS }}
-    run: |
-      mkdir assets
-      python -c "import os; open('assets/credenciales.json', 'w').write(os.environ['LLAVE_SECRETA'])"
-      mkdir wsgiref
-      touch wsgiref/__init__.py
-      cat << 'EOF' > wsgiref/simple_server.py
-      class WSGIServer: pass
-      class WSGIRequestHandler: pass
-      def make_server(*args, **kwargs): pass
-      EOF
-      cat << 'EOF' > wsgiref/util.py
-      def get_environ(*args, **kwargs): pass
-      EOF
+      - name: Inyectar credenciales directas
+        env:
+          LLAVE_SECRETA: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          echo "SECRETO = \"\"\"$LLAVE_SECRETA\"\"\"" > credenciales_app.py
 
       - name: Construir la APK
         run: yes | flet build apk
