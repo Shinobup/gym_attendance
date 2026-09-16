@@ -1,39 +1,24 @@
 import flet as ft
 from datetime import datetime, timedelta
 import os
-import json 
 import sys
-import types
+import json
 import urllib.parse
 
-# --- 1. PARCHE QUIRÚRGICO PARA ANDROID (V2) ---
-class JugueteDePlastico:
-    # Una clase vacía que no hace nada, solo sirve para engañar a Google
-    pass
+# --- 1. EL PARCHE PROFESIONAL PARA ANDROID ---
+# Usamos la herramienta nativa de Python para simular módulos sin romper Flet
+from unittest.mock import MagicMock
+sys.modules['google_auth_oauthlib'] = MagicMock()
+sys.modules['google_auth_oauthlib.flow'] = MagicMock()
 
-class DummyAuthModule(types.ModuleType):
-    # Si Google pide CUALQUIER herramienta (como InstalledAppFlow), le damos el juguete
-    def __getattr__(self, name):
-        return JugueteDePlastico
+import gspread 
 
-# Le ponemos el parche a la librería problemática
-sys.modules['google_auth_oauthlib'] = DummyAuthModule('google_auth_oauthlib')
-sys.modules['google_auth_oauthlib.flow'] = DummyAuthModule('google_auth_oauthlib.flow')
-
-import gspread
-
-# --- 2. CONEXIÓN A GOOGLE SHEETS (LEYENDO EL JSON DIRECTO) ---
+# --- 2. CONEXIÓN A GOOGLE SHEETS (VÍA MÓDULO PYTHON) ---
 try:
-    # Buscamos el archivo credenciales.json que GitHub creará en la raíz
-    directorio_actual = os.path.dirname(os.path.abspath(__file__))
-    ruta_json = os.path.join(directorio_actual, 'credenciales.json')
+    # Flet SIEMPRE empaqueta los archivos .py. ¡No más archivos ignorados!
+    from mis_secretos import JSON_TEXTO
+    credenciales_dict = json.loads(JSON_TEXTO.strip())
     
-    with open(ruta_json, 'r') as archivo:
-        contenido = archivo.read().strip()
-        if not contenido:
-            raise ValueError("El JSON está vacío. Revisa tus Secrets en GitHub.")
-        credenciales_dict = json.loads(contenido)
-        
     gc = gspread.service_account_from_dict(credenciales_dict)
     libro = gc.open('Clientes Kratos') 
     hoja_datos = libro.sheet1 

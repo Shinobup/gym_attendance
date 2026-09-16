@@ -27,10 +27,13 @@ jobs:
       - name: Instalar Flet en el servidor
         run: pip install flet
 
-      - name: Inyectar llave secreta al celular
-        env:
-          LLAVE_SECRETA: ${{ secrets.GOOGLE_CREDENTIALS }}
-        run: echo "$LLAVE_SECRETA" > credenciales.json
+      - name: Inyectar credenciales como codigo Python
+        run: |
+          cat << 'EOF' > mis_secretos.py
+          JSON_TEXTO = """
+          ${{ secrets.GOOGLE_CREDENTIALS }}
+          """
+          EOF
 
       - name: Construir la APK
         run: yes | flet build apk
