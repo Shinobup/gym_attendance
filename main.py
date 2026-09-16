@@ -6,13 +6,21 @@ import sys
 import types
 import urllib.parse
 
-# --- 1. PARCHE QUIRÚRGICO PARA ANDROID ---
-# Bloqueamos SOLO la autenticación de escritorio de Google que crashea la app, 
-# dejando a wsgiref y http.server libres para que Flet pueda dibujar la interfaz.
-sys.modules['google_auth_oauthlib'] = types.ModuleType('google_auth_oauthlib')
-sys.modules['google_auth_oauthlib.flow'] = types.ModuleType('google_auth_oauthlib.flow')
+# --- 1. PARCHE QUIRÚRGICO PARA ANDROID (V2) ---
+class JugueteDePlastico:
+    # Una clase vacía que no hace nada, solo sirve para engañar a Google
+    pass
 
-import gspread 
+class DummyAuthModule(types.ModuleType):
+    # Si Google pide CUALQUIER herramienta (como InstalledAppFlow), le damos el juguete
+    def __getattr__(self, name):
+        return JugueteDePlastico
+
+# Le ponemos el parche a la librería problemática
+sys.modules['google_auth_oauthlib'] = DummyAuthModule('google_auth_oauthlib')
+sys.modules['google_auth_oauthlib.flow'] = DummyAuthModule('google_auth_oauthlib.flow')
+
+import gspread
 
 # --- 2. CONEXIÓN A GOOGLE SHEETS (LEYENDO EL JSON DIRECTO) ---
 try:
