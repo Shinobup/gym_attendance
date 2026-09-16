@@ -6,41 +6,25 @@ import sys
 import types
 import urllib.parse
 
-# --- 1. PARCHE PARA ANDROID (SOLO BLOQUEAMOS WSGIREF) ---
-class DummyServerClass:
-    pass
+# --- 1. PARCHE QUIRÚRGICO PARA ANDROID ---
+# Bloqueamos SOLO la autenticación de escritorio de Google que crashea la app, 
+# dejando a wsgiref y http.server libres para que Flet pueda dibujar la interfaz.
+sys.modules['google_auth_oauthlib'] = types.ModuleType('google_auth_oauthlib')
+sys.modules['google_auth_oauthlib.flow'] = types.ModuleType('google_auth_oauthlib.flow')
 
-class DummyModule(types.ModuleType):
-    def __init__(self, name):
-        super().__init__(name)
-        self.__path__ = []
-
-    def __getattr__(self, name):
-        return DummyServerClass
-
-wsgiref_mod = DummyModule('wsgiref')
-simple_server_mod = DummyModule('wsgiref.simple_server')
-util_mod = DummyModule('wsgiref.util')
-
-wsgiref_mod.simple_server = simple_server_mod
-wsgiref_mod.util = util_mod
-
-# Registramos el parche. ¡Dejamos libre a http.server para que Flet pueda funcionar!
-sys.modules['wsgiref'] = wsgiref_mod
-sys.modules['wsgiref.simple_server'] = simple_server_mod
-sys.modules['wsgiref.util'] = util_mod
-
-# --- AHORA SÍ IMPORTAMOS GSPREAD ---
 import gspread 
 
 # --- 2. CONEXIÓN A GOOGLE SHEETS (LEYENDO EL JSON DIRECTO) ---
 try:
-    # Buscamos el archivo credenciales.json que GitHub creará
+    # Buscamos el archivo credenciales.json que GitHub creará en la raíz
     directorio_actual = os.path.dirname(os.path.abspath(__file__))
     ruta_json = os.path.join(directorio_actual, 'credenciales.json')
     
     with open(ruta_json, 'r') as archivo:
-        credenciales_dict = json.load(archivo)
+        contenido = archivo.read().strip()
+        if not contenido:
+            raise ValueError("El JSON está vacío. Revisa tus Secrets en GitHub.")
+        credenciales_dict = json.loads(contenido)
         
     gc = gspread.service_account_from_dict(credenciales_dict)
     libro = gc.open('Clientes Kratos') 
