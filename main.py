@@ -6,7 +6,6 @@ import sys
 import types
 import urllib.parse
 from dotenv import load_dotenv
-import gspread
 
 # --- 1. CARGAR VARIABLES DE ENTORNO (Ruta absoluta para Android) ---
 directorio_actual = os.path.dirname(os.path.abspath(__file__))
@@ -42,6 +41,8 @@ sys.modules['wsgiref'] = wsgiref_mod
 sys.modules['wsgiref.simple_server'] = simple_server_mod
 sys.modules['wsgiref.util'] = util_mod
 sys.modules['http.server'] = http_server_mod
+
+import gspread
 
 # --- 3. CONEXIÓN A GOOGLE SHEETS EN LA NUBE ---
 try:
