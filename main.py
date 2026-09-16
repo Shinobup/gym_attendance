@@ -1,24 +1,19 @@
 import flet as ft
 from datetime import datetime, timedelta
 import os
-import sys
-import json
+import json 
 import urllib.parse
-
-# --- 1. EL PARCHE PROFESIONAL PARA ANDROID ---
-# Usamos la herramienta nativa de Python para simular módulos sin romper Flet
-from unittest.mock import MagicMock
-sys.modules['google_auth_oauthlib'] = MagicMock()
-sys.modules['google_auth_oauthlib.flow'] = MagicMock()
-
 import gspread 
 
-# --- 2. CONEXIÓN A GOOGLE SHEETS (VÍA MÓDULO PYTHON) ---
+# --- CONEXIÓN A GOOGLE SHEETS ---
 try:
-    # Flet SIEMPRE empaqueta los archivos .py. ¡No más archivos ignorados!
-    from mis_secretos import JSON_TEXTO
-    credenciales_dict = json.loads(JSON_TEXTO.strip())
+    # Flet en Android guarda los archivos en la carpeta oficial 'assets'
+    directorio_actual = os.path.dirname(os.path.abspath(__file__))
+    ruta_json = os.path.join(directorio_actual, 'assets', 'credenciales.json')
     
+    with open(ruta_json, 'r') as archivo:
+        credenciales_dict = json.load(archivo)
+        
     gc = gspread.service_account_from_dict(credenciales_dict)
     libro = gc.open('Clientes Kratos') 
     hoja_datos = libro.sheet1 
@@ -26,7 +21,7 @@ except Exception as e:
     print(f"Error de conexión con Google Sheets: {e}")
     hoja_datos = None
 
-# --- 3. APLICACIÓN PRINCIPAL FLET ---
+# --- APLICACIÓN PRINCIPAL FLET ---
 def main(page: ft.Page):
     page.title = "Gym Kratos"
     page.bgcolor = ft.Colors.BLACK 
