@@ -1,20 +1,19 @@
 import flet as ft
 from datetime import datetime, timedelta
 import os
-from dotenv import load_dotenv
-
-# Calculamos la ruta exacta
-directorio_actual = os.path.dirname(os.path.abspath(__file__))
-ruta_env = os.path.join(directorio_actual, '.env')
-
-# Cargamos el archivo directamente SIN usar find_dotenv()
-load_dotenv(ruta_env) 
-
 import json 
 import sys
 import types
+import urllib.parse
+from dotenv import load_dotenv
+import gspread
 
-# --- PARCHE PARA ANDROID (VERSIÓN ESTRUCTURAL FINAL) ---
+# --- 1. CARGAR VARIABLES DE ENTORNO (Ruta absoluta para Android) ---
+directorio_actual = os.path.dirname(os.path.abspath(__file__))
+ruta_env = os.path.join(directorio_actual, '.env')
+load_dotenv(ruta_env) 
+
+# --- 2. PARCHE PARA ANDROID (MOCKS ESTRUCTURALES) ---
 class DummyServerClass:
     # Una clase vacía perfecta para que Google herede de ella sin errores
     pass
@@ -28,31 +27,23 @@ class DummyModule(types.ModuleType):
         # Cuando Google pida una herramienta (como WSGIServer), le damos nuestra clase
         return DummyServerClass
 
-# 1. Creamos los módulos falsos como si fueran carpetas reales
+# Creamos los módulos falsos como si fueran carpetas reales
 wsgiref_mod = DummyModule('wsgiref')
 simple_server_mod = DummyModule('wsgiref.simple_server')
 util_mod = DummyModule('wsgiref.util')
 http_server_mod = DummyModule('http.server')
 
-# 2. Conectamos las carpetas para que la ruta wsgiref.simple_server exista de verdad
+# Conectamos las carpetas para que la ruta wsgiref.simple_server exista de verdad
 wsgiref_mod.simple_server = simple_server_mod
 wsgiref_mod.util = util_mod
 
-# 3. Registramos todo en el sistema matriz de Python
+# Registramos todo en el sistema matriz de Python
 sys.modules['wsgiref'] = wsgiref_mod
 sys.modules['wsgiref.simple_server'] = simple_server_mod
 sys.modules['wsgiref.util'] = util_mod
 sys.modules['http.server'] = http_server_mod
-# -------------------------------------------------------
 
-import gspread # Ahora gspread cargará sin estrellarse
-import gspread
-import urllib.parse
-from dotenv import load_dotenv
-
-# --- CONEXIÓN A GOOGLE SHEETS EN LA NUBE (Vía Variables de Entorno) ---
-load_dotenv() 
-
+# --- 3. CONEXIÓN A GOOGLE SHEETS EN LA NUBE ---
 try:
     credenciales_texto = os.environ.get('GOOGLE_CREDENTIALS')
     if not credenciales_texto:
@@ -65,6 +56,7 @@ except Exception as e:
     print(f"Error de conexión con Google Sheets: {e}")
     hoja_datos = None
 
+# --- 4. APLICACIÓN PRINCIPAL FLET ---
 def main(page: ft.Page):
     # --- NUEVO LOOK KRATOS (NEGRO Y GRIS PURO) ---
     page.title = "Gym Kratos"
@@ -214,9 +206,9 @@ def main(page: ft.Page):
         page.add(titulo, lista_visual, btn_volver)
         page.update()
 
-# ---------------------------------------------------
-# PANTALLA 4: RENOVAR MEMBRESÍA
-# ---------------------------------------------------
+    # ---------------------------------------------------
+    # PANTALLA 4: RENOVAR MEMBRESÍA
+    # ---------------------------------------------------
     def mostrar_renovar(e=None):
         page.controls.clear()
         
@@ -339,9 +331,9 @@ def main(page: ft.Page):
         )
         page.update()
 
-# ---------------------------------------------------
-# PANTALLA 6: AVISOS DE WHATSAPP
-# ---------------------------------------------------
+    # ---------------------------------------------------
+    # PANTALLA 6: AVISOS DE WHATSAPP
+    # ---------------------------------------------------
     def mostrar_avisos(e=None):
         page.controls.clear()
         
@@ -442,5 +434,5 @@ def main(page: ft.Page):
     # Arrancamos con el menú
     mostrar_menu()
 
-# Abrimos en el navegador web
-ft.app(target=main, view=ft.AppView.WEB_BROWSER)
+# Abrimos de forma nativa para el celular (sin WEB_BROWSER)
+ft.app(target=main)
