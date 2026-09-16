@@ -5,16 +5,9 @@ import json
 import sys
 import types
 import urllib.parse
-from dotenv import load_dotenv
 
-# --- 1. CARGAR VARIABLES DE ENTORNO (Ruta absoluta para Android) ---
-directorio_actual = os.path.dirname(os.path.abspath(__file__))
-ruta_env = os.path.join(directorio_actual, '.env')
-load_dotenv(ruta_env) 
-
-# --- 2. PARCHE PARA ANDROID (MOCKS ESTRUCTURALES) ---
+# --- 1. PARCHE PARA ANDROID (SOLO BLOQUEAMOS WSGIREF) ---
 class DummyServerClass:
-    # Una clase vacía perfecta para que Google herede de ella sin errores
     pass
 
 class DummyModule(types.ModuleType):
@@ -23,33 +16,32 @@ class DummyModule(types.ModuleType):
         self.__path__ = []
 
     def __getattr__(self, name):
-        # Cuando Google pida una herramienta (como WSGIServer), le damos nuestra clase
         return DummyServerClass
 
-# Creamos los módulos falsos como si fueran carpetas reales
 wsgiref_mod = DummyModule('wsgiref')
 simple_server_mod = DummyModule('wsgiref.simple_server')
 util_mod = DummyModule('wsgiref.util')
-http_server_mod = DummyModule('http.server')
 
-# Conectamos las carpetas para que la ruta wsgiref.simple_server exista de verdad
 wsgiref_mod.simple_server = simple_server_mod
 wsgiref_mod.util = util_mod
 
-# Registramos todo en el sistema matriz de Python
+# Registramos el parche. ¡Dejamos libre a http.server para que Flet pueda funcionar!
 sys.modules['wsgiref'] = wsgiref_mod
 sys.modules['wsgiref.simple_server'] = simple_server_mod
 sys.modules['wsgiref.util'] = util_mod
-sys.modules['http.server'] = http_server_mod
 
-import gspread
+# --- AHORA SÍ IMPORTAMOS GSPREAD ---
+import gspread 
 
-# --- 3. CONEXIÓN A GOOGLE SHEETS EN LA NUBE ---
+# --- 2. CONEXIÓN A GOOGLE SHEETS (LEYENDO EL JSON DIRECTO) ---
 try:
-    credenciales_texto = os.environ.get('GOOGLE_CREDENTIALS')
-    if not credenciales_texto:
-        raise ValueError("No se encontró la variable de entorno GOOGLE_CREDENTIALS")
-    credenciales_dict = json.loads(credenciales_texto)
+    # Buscamos el archivo credenciales.json que GitHub creará
+    directorio_actual = os.path.dirname(os.path.abspath(__file__))
+    ruta_json = os.path.join(directorio_actual, 'credenciales.json')
+    
+    with open(ruta_json, 'r') as archivo:
+        credenciales_dict = json.load(archivo)
+        
     gc = gspread.service_account_from_dict(credenciales_dict)
     libro = gc.open('Clientes Kratos') 
     hoja_datos = libro.sheet1 
@@ -57,11 +49,10 @@ except Exception as e:
     print(f"Error de conexión con Google Sheets: {e}")
     hoja_datos = None
 
-# --- 4. APLICACIÓN PRINCIPAL FLET ---
+# --- 3. APLICACIÓN PRINCIPAL FLET ---
 def main(page: ft.Page):
-    # --- NUEVO LOOK KRATOS (NEGRO Y GRIS PURO) ---
     page.title = "Gym Kratos"
-    page.bgcolor = ft.Colors.BLACK # Fondo negro puro
+    page.bgcolor = ft.Colors.BLACK 
     page.theme_mode = ft.ThemeMode.DARK
     page.padding = 20
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER 
@@ -74,7 +65,6 @@ def main(page: ft.Page):
         
         titulo = ft.Text("📝 NUEVO INGRESO", size=24, weight=ft.FontWeight.BOLD)
         
-        # --- CAMPOS DE TEXTO BLANCOS Y LETRA NEGRA ABSOLUTA ---
         input_nombre = ft.TextField(
             label="Nombre del cliente", 
             bgcolor=ft.Colors.WHITE, 
@@ -357,17 +347,11 @@ def main(page: ft.Page):
                 
                 fecha_vencimiento = datetime.strptime(vence, "%Y-%m-%d")
                 
-                # Solo mostramos a los que ya vencieron
                 if datetime.now() > fecha_vencimiento:
                     hay_morosos = True
-                    
-                    # Le quitamos el '+' al teléfono por si acaso (wa.me prefiere solo números)
                     tel_limpio = telefono.replace("+", "")
                     
-                    # Armamos el mensaje automático
                     mensaje = f"¡Hola {nombre}!  Te escribimos de Gym Kratos. Tu membresía venció el {vence}. ¡Te esperamos para renovar y seguir entrenando con todo! "
-                    
-                    # Convertimos el texto para que pueda viajar por la URL
                     mensaje_url = urllib.parse.quote(mensaje)
                     link_wsp = f"https://wa.me/{tel_limpio}?text={mensaje_url}"
                     
@@ -380,7 +364,7 @@ def main(page: ft.Page):
                                     "Enviar Cobro por WhatsApp",
                                     bgcolor=ft.Colors.GREEN_700,
                                     color=ft.Colors.WHITE,
-                                    url=link_wsp  # ¡Flet hace la magia directa con esta propiedad!
+                                    url=link_wsp 
                                 )
                             ])
                         )
@@ -432,8 +416,6 @@ def main(page: ft.Page):
         )
         page.update()
 
-    # Arrancamos con el menú
     mostrar_menu()
 
-# Abrimos de forma nativa para el celular (sin WEB_BROWSER)
 ft.app(target=main)

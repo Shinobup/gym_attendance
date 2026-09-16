@@ -30,7 +30,7 @@ jobs:
       - name: Inyectar llave secreta al celular
         env:
           MIS_CREDENCIALES: ${{ secrets.GOOGLE_CREDENTIALS }}
-        run: echo "GOOGLE_CREDENTIALS=$(echo $MIS_CREDENCIALES | jq -c .)" > .env
+        run: echo "$MIS_CREDENCIALES" | jq -c . > credenciales.json
 
       - name: Construir la APK
         run: yes | flet build apk
